@@ -167,6 +167,18 @@
   .form-group label { display: block; font-size: 13px; color: #666; margin-bottom: 5px; }
   .form-group input, .form-group select { width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; }
   .form-group input:focus, .form-group select:focus { outline: none; border-color: #667eea; }
+
+  /* ===== فقط بخش ساخت آزمون مدیر ===== */
+  .exam-create-actions {
+    margin-bottom: 15px;
+  }
+  .exam-create-actions .exam-create-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
   .hidden { display: none !important; }
   .login-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
   .login-box { background: white; border-radius: 20px; padding: 40px; width: 100%; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
@@ -477,8 +489,8 @@
       
       <div id="tab-tests" class="hidden">
         <div class="content-title">📝 آزمون‌ها</div>
-        <div id="adminTestActions" class="hidden" style="margin-bottom: 15px;">
-          <button class="btn-primary" onclick="openCreateTestModal()">➕ ایجاد آزمون جدید</button>
+        <div id="adminTestActions" class="exam-create-actions" style="display:none;">
+          <button type="button" class="btn-primary exam-create-btn" onclick="openCreateTestModal()">➕ ایجاد آزمون جدید</button>
         </div>
         <div id="testsList" class="test-grid"></div>
       </div>
@@ -761,8 +773,7 @@
 // ===== Supabase Client =====
 const SUPABASE_URL = 'https://lnjeltffpcwzbmhpkjka.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxuamVsdGZmcGN3emJtaHBramthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3MjkyOTksImV4cCI6MjEwMjMwNTI5OX0.9oLOVVkuPKxQP1qteRkDQKo_TD2tpMFCKbK7HGNFxhw';
-window.dlxSupabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-const supabaseClient = window.dlxSupabaseClient;
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ===== وضعیت =====
 let currentRole = null;
@@ -1021,7 +1032,7 @@ async function handleLogin() {
     }
   } else if (currentRole === 'student') {
     // ===== بررسی رمز دانش‌آموز از دیتابیس =====
-    const { data: settings, error } = await supabaseClient
+    const { data: settings, error } = await supabase
       .from('settings')
       .select('*')
       .eq('key', 'student_password')
@@ -1047,7 +1058,7 @@ async function showPhoneVerification() {
   }
   
   // ===== بررسی مجاز بودن شماره از دیتابیس =====
-  const { data: user, error } = await supabaseClient
+  const { data: user, error } = await supabase
     .from('users')
     .select('*')
     .eq('phone', trimmedPhone)
@@ -1081,6 +1092,7 @@ function enterApp(role) {
     el.classList.toggle('hidden', role !== 'admin');
   });
   document.getElementById('tab-users').classList.toggle('hidden', role !== 'admin');
+  document.getElementById('adminTestActions').style.display = role === 'admin' ? 'block' : 'none';
   
   document.querySelectorAll('.sidebar-item[data-tab="channels"]').forEach(el => {
     el.classList.toggle('hidden', role !== 'admin');
@@ -1172,7 +1184,7 @@ function renderAll() {
 }
 
 async function loadStudentPassword() {
-  const { data, error } = await supabaseClient
+  const { data, error } = await supabase
     .from('settings')
     .select('*')
     .eq('key', 'student_password')
@@ -1447,7 +1459,7 @@ async function saveChannelEdit() {
     return;
   }
   
-  const { error } = await supabaseClient
+  const { error } = await supabase
     .from('channels')
     .update({ name: newName, channel_id: newId, type: newId.startsWith('@') ? 'channel' : 'group' })
     .eq('id', channel.id);
@@ -2107,7 +2119,7 @@ async function saveProfile() {
     return;
   }
   
-  const { error } = await supabaseClient
+  const { error } = await supabase
     .from('users')
     .update({ username: username, id: id })
     .eq('phone', currentStudentPhone);
@@ -2337,7 +2349,7 @@ async function activateTest(index) {
   const test = cachedTests[index];
   if (!test) return;
   
-  const { error } = await supabaseClient
+  const { error } = await supabase
     .from('tests')
     .update({ days_after: 0, start_time: '22:00', end_time: '23:00', is_active: true, is_finished: false })
     .eq('id', test.id);
@@ -2356,7 +2368,7 @@ async function deactivateTest(index) {
   if (!test) return;
   const manualEndedAt = Date.now();
   
-  const { error } = await supabaseClient
+  const { error } = await supabase
     .from('tests')
     .update({ is_active: false, is_finished: true, manual_ended_at: manualEndedAt })
     .eq('id', test.id);
@@ -2711,7 +2723,7 @@ async function changeStudentPassword() {
     return;
   }
   
-  const { data: existing, error: checkError } = await supabaseClient
+  const { data: existing, error: checkError } = await supabase
     .from('settings')
     .select('*')
     .eq('key', 'student_password')
